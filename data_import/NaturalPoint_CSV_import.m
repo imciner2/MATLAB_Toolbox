@@ -16,11 +16,12 @@ function [ frame, trackable, info ] = NaturalPoint_CSV_import(filename)
 %
 % Created by: Ian McInerney
 % Created on: September 16, 2016
-% Version: 1.0
-% Last Modified: September 16, 2013
+% Version: 1.1
+% Last Modified: February 14, 2017
 %
 % Revision History:
 %   1.0 - Initial Release
+%   1.1 - Sanitized trackable names to remove spaces and hyphens
 
 %% Open the file and get all the data
 file = fopen(filename);
@@ -53,8 +54,12 @@ for ( i=1:1:numDataPoints )
         % There is a weird line in the logfile where trackable lines will
         % appear before any frames occur, and those lines are incomplete.
         % So ignore those log lines
-        % TODO: Should sanitize this name input (remove spaces)
+        
+        % Sanitize the input
         name = strrep( line{4},'"','');
+        name = strrep( name, ' ', '_');
+        name = strrep( name, '-', '_');
+        
         frameNumber = str2double(line{2})+1;
         markerCount = str2double(line{7});
         
