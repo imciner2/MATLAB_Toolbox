@@ -9,12 +9,13 @@ function [ euler ] = quat2euler( q )
 %
 % Created by: Ian McInerney
 % Created on: February 14, 2017
-% Version: 1.1
-% Last Modified: February 14, 2017
+% Version: 1.2
+% Last Modified: February 19, 2017
 %
 % Revision History:
 %   1.0 - Initial Release
 %   1.1 - Allowed for vectorization of operands
+%   1.2 - Forced Euler output to be only Real numbers
 
 [numPoints ~] = size(q);
 euler = zeros(numPoints,1);
@@ -40,8 +41,8 @@ psi = acos( l1 ./ cos(theta) ).*sign(l2);
 % Find the roll
 phi = acos(n3 ./ cos(theta) ).*sign(m3);
 
-euler(:,1) = psi;
-euler(:,2) = theta;
-euler(:,3) = phi;
+euler(:,1) = real(psi);
+euler(:,2) = real(theta);
+euler(:,3) = real(phi);
 
 end
