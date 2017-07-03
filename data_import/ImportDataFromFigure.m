@@ -44,28 +44,44 @@ lgndText = get(lgnd, 'String');
 %% Make data series
 [numSeries, numPoints] = size(x);
 disp(['Extracting ', num2str(numSeries), ' data series in figure ', figureFile]);
+seriesData.numSeries = numSeries;
 for (i=1:1:numSeries)
-    seriesData.(['series', num2str(i)]).name = lgndText{i};
+    seriesData.(['series', num2str(i)]).name = lgndText{numSeries-i+1};
     
     % Extract the X axis data if there is any
     [gar, xSize] = size(x{i});
     if xSize ~= 0
         seriesData.(['series', num2str(i)]).x = cell2mat(x(i));
-        seriesData.xlabel = cell2mat(get(get(ax, 'XLabel'), 'String'));
+        legEntry = get(get(ax, 'XLabel'), 'String');
+        if ischar(legEntry)
+            seriesData.xLabel = legEntry;
+        else
+            seriesData.xlabel = cell2mat(legEntry);
+        end
     end
    
     % Extract the Y axis data if there is any
     [gar, ySize] = size(y{i});
     if ySize ~= 0
         seriesData.(['series', num2str(i)]).y = cell2mat(y(i));
-        seriesData.ylabel = cell2mat(get(get(ax, 'YLabel'), 'String'));
+        legEntry = get(get(ax, 'YLabel'), 'String');
+        if ischar(legEntry)
+            seriesData.yLabel = legEntry;
+        else
+            seriesData.ylabel = cell2mat(legEntry);
+        end
     end
     
     % Extract the Z axis data if there is any
     [gar, zSize] = size(z{i});
     if zSize ~= 0
         seriesData.(['series', num2str(i)]).z = cell2mat(z(i));
-        seriesData.zlabel = cell2mat(get(get(data, 'ZLabel'), 'String'));
+        legEntry = get(get(ax, 'ZLabel'), 'String');
+        if ischar(legEntry)
+            seriesData.zLabel = legEntry;
+        else
+            seriesData.zlabel = cell2mat(legEntry);
+        end
     end
 end
 
