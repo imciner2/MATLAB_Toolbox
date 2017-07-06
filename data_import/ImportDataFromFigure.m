@@ -15,11 +15,12 @@ function [ seriesData ] = ImportDataFromFigure( figureFile )
 %
 % Created by: Ian McInerney
 % Created on: June 30, 2017
-% Version: 1.0
+% Version: 1.1
 % Last Modified: June 30, 2017
 %
 % Revision History:
 %   1.0 - Initial Release
+%   1.1 - Adapted loop to check cell contents and generalize axes processing
 
 %% Open the figure and not display it
 fig = openfig(figureFile, 'new', 'invisible');
@@ -33,54 +34,45 @@ end
 
 data = get(ax, 'Children');
 
-x = get(data, 'XData');
-y = get(data, 'YData');
-z = get(data, 'ZData');
+axesData.x = get(data, 'XData');
+axesData.y = get(data, 'YData');
+axesData.z = get(data, 'ZData');
 
 %% Get the legend entries
 lgnd = get(ax, 'Legend');
 lgndText = get(lgnd, 'String');
 
 %% Make data series
-[numSeries, numPoints] = size(x);
+[numSeries, numPoints] = size(axesData.x);
 disp(['Extracting ', num2str(numSeries), ' data series in figure ', figureFile]);
 seriesData.numSeries = numSeries;
+
+axes = ['x', 'y', 'z'];
 for (i=1:1:numSeries)
     seriesData.(['series', num2str(i)]).name = lgndText{numSeries-i+1};
     
-    % Extract the X axis data if there is any
-    [gar, xSize] = size(x{i});
-    if xSize ~= 0
-        seriesData.(['series', num2str(i)]).x = cell2mat(x(i));
-        legEntry = get(get(ax, 'XLabel'), 'String');
-        if ischar(legEntry)
-            seriesData.xLabel = legEntry;
+    % Iterate over each axes
+    for (j=1:1:length(axes))
+        
+        % Extract the axes data
+        if iscell( axesData.(axes(j)) )
+            doubleData = double( axesData.(axes(j)){i} );
         else
-            seriesData.xlabel = cell2mat(legEntry);
+            doubleData = double( axesData.(axes(j)) );
         end
-    end
-   
-    % Extract the Y axis data if there is any
-    [gar, ySize] = size(y{i});
-    if ySize ~= 0
-        seriesData.(['series', num2str(i)]).y = cell2mat(y(i));
-        legEntry = get(get(ax, 'YLabel'), 'String');
-        if ischar(legEntry)
-            seriesData.yLabel = legEntry;
-        else
-            seriesData.ylabel = cell2mat(legEntry);
-        end
-    end
-    
-    % Extract the Z axis data if there is any
-    [gar, zSize] = size(z{i});
-    if zSize ~= 0
-        seriesData.(['series', num2str(i)]).z = cell2mat(z(i));
-        legEntry = get(get(ax, 'ZLabel'), 'String');
-        if ischar(legEntry)
-            seriesData.zLabel = legEntry;
-        else
-            seriesData.zlabel = cell2mat(legEntry);
+        
+        % Check if there is data
+        [gar, si] = size(doubleData);
+        if si ~= 0
+            seriesData.(['series', num2str(i)]).(axes(j)) = doubleData;
+            
+            % Pull out the legend entry
+            legEntry = get(get(ax, [upper( axes(j) ), 'Label']), 'String');
+            if ischar(legEntry)
+                seriesData.([axes(j), 'label']) = legEntry;
+            else
+                seriesData.([axes(j), 'label']) = cell2mat(legEntry);
+            end
         end
     end
 end
