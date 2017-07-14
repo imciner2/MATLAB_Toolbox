@@ -15,12 +15,13 @@ function [ str ] = eng( num, decimals )
 %
 % Created by: Ian McInerney
 % Created on: July 12, 2017
-% Version: 1.1
-% Last Modified: July 12, 2017
+% Version: 1.2
+% Last Modified: July 14, 2017
 %
 % Revision History:
 %   1.0 - Initial Release
 %   1.1 - Fixed decimal place creation
+%   1.2 - Streamlined decimal creation
 
 if ( ~exist('decimals') )
     decimals = 3;
@@ -46,19 +47,11 @@ for i=1:1:length( num )
     
     % Figure out the decimal portion of the number
     decimalPortion = tempNum - integerPortion*(10^decimalPlaces);
-    if (decimalPortion >= 10^(decimals+1))
-        % Truncate the decimal portion
-        decimalPortion = decimalPortion / 10^( round(log10(decimalPortion)) - decimals);
-    else
-        % Expand the decimal portion
-        currentPlaces = floor(log10(decimalPortion));
-        decimalPortion = decimalPortion * 10^(decimals - currentPlaces);
-    end
-    decimalPortion = round(decimalPortion);
-    
+    decimalPortion = round(decimalPortion, decimals);
+    decimalString = sprintf('%f', decimalPortion);
     
     % Create the new string
-    newStr = sprintf('%s%i.%-iE%+03i', signStr, integerPortion, decimalPortion, decimalPlaces);
+    newStr = sprintf('%s%i.%sE%+03i', signStr, integerPortion, decimalString(3:end), decimalPlaces);
     
     % Add it to the array
     if (i > 1)
