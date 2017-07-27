@@ -15,66 +15,99 @@ function [ seriesData ] = ImportDataFromFigure( figureFile )
 %
 % Created by: Ian McInerney
 % Created on: June 30, 2017
-% Version: 1.1
-% Last Modified: June 30, 2017
+% Version: 1.2
+% Last Modified: July 18, 2017
 %
 % Revision History:
 %   1.0 - Initial Release
 %   1.1 - Adapted loop to check cell contents and generalize axes processing
+%   1.2 - Adapted to work with subplots in a figure
 
 %% Open the figure and not display it
 fig = openfig(figureFile, 'new', 'invisible');
 
 
-%% Get the axis object and then pull the data from it
-ax = get(fig, 'CurrentAxes');
+%% Get the axis objects
+ax = get(fig, 'Children');
 if ( isempty(ax) )
     error('Figure contains no axis.');
 end
 
-data = get(ax, 'Children');
+numPlots = length(ax);
+axesTypes = strcmp( get(ax, 'type'), 'axes');
+disp(['Extracting ', num2str( sum(axesTypes) ), ' subplots in figure ', figureFile]);
 
-axesData.x = get(data, 'XData');
-axesData.y = get(data, 'YData');
-axesData.z = get(data, 'ZData');
 
-%% Get the legend entries
-lgnd = get(ax, 'Legend');
-lgndText = get(lgnd, 'String');
-
-%% Make data series
-[numSeries, numPoints] = size(axesData.x);
-disp(['Extracting ', num2str(numSeries), ' data series in figure ', figureFile]);
-seriesData.numSeries = numSeries;
-
-axes = ['x', 'y', 'z'];
-for (i=1:1:numSeries)
-    seriesData.(['series', num2str(i)]).name = lgndText{numSeries-i+1};
+%% Iterate over the number of plots in the figure
+currentPlot = 1;
+for (k=1:1:numPlots)
+    %% Make sure the child is actually an axes (sometimes legends show up here)
+    if ( ~strcmp(get(ax(k), 'type'), 'axes') )
+        continue
+    end
     
-    % Iterate over each axes
-    for (j=1:1:length(axes))
-        
-        % Extract the axes data
-        if iscell( axesData.(axes(j)) )
-            doubleData = double( axesData.(axes(j)){i} );
-        else
-            doubleData = double( axesData.(axes(j)) );
+    %% Extract the subplot title
+    ti = get( ax(k), 'Title');
+    tempData.title = get(ti, 'String');
+    
+    %% Get the data from the axes
+    data = get(ax(k), 'Children');
+    axesData.x = get(data, 'XData');
+    axesData.y = get(data, 'YData');
+    axesData.z = get(data, 'ZData');
+
+    %% Get the legend entries (if it exists)
+    lgnd = get(ax(k), 'Legend');
+    if ( ~isempty(lgnd) )
+        lgndText = get(lgnd, 'String');
+    end
+
+    %% Make data series
+    [numSeries, numPoints] = size(axesData.x);
+    disp(['Extracting ', num2str(numSeries), ' data series in subplot ', num2str(currentPlot), ' of figure ', figureFile]);
+    tempData.numSeries = numSeries;
+
+    axes = ['x', 'y', 'z'];
+    for (i=1:1:numSeries)
+        if exist('lgndText')
+            tempData.(['series', num2str(i)]).name = lgndText{numSeries-i+1};
         end
-        
-        % Check if there is data
-        [gar, si] = size(doubleData);
-        if si ~= 0
-            seriesData.(['series', num2str(i)]).(axes(j)) = doubleData;
-            
-            % Pull out the legend entry
-            legEntry = get(get(ax, [upper( axes(j) ), 'Label']), 'String');
-            if ischar(legEntry)
-                seriesData.([axes(j), 'label']) = legEntry;
+
+        % Iterate over each axes
+        for (j=1:1:length(axes))
+
+            % Extract the axes data
+            if iscell( axesData.(axes(j)) )
+                doubleData = double( axesData.(axes(j)){i} );
             else
-                seriesData.([axes(j), 'label']) = cell2mat(legEntry);
+                doubleData = double( axesData.(axes(j)) );
+            end
+
+            % Check if there is data
+            [gar, si] = size(doubleData);
+            if si ~= 0
+                tempData.(['series', num2str(i)]).(axes(j)) = doubleData;
+
+                % Pull out the axes label entry
+                legEntry = get(get(ax(k), [upper( axes(j) ), 'Label']), 'String');
+                if ischar(legEntry)
+                    tempData.([axes(j), 'label']) = legEntry;
+                else
+                    tempData.([axes(j), 'label']) = cell2mat(legEntry);
+                end
             end
         end
     end
+    
+    %% Copy the plot data into the main variable to return it
+    if (numPlots > 1)
+        seriesData.(['subplot', num2str(currentPlot)]) = tempData;
+    else
+        seriesData = tempData;
+    end
+    currentPlot = currentPlot + 1;
+    
+    clear tempData;
 end
 
 end
