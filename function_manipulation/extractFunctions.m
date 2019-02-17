@@ -4,6 +4,11 @@ function [ numFunc, funcs ] = extractFunctions( filename, varargin )
 % This function will extract all the functions present in the file and save
 % them inside the approrpiately named file inside the current directory.
 %
+% The file will first be copied to a new file named 'testFile.m' before
+% being extracted. Ensure there are no functions named 'testFile' to
+% prevent this file from possibly being overwritten and corrupted during
+% the extraction process.
+%
 % This will only extract functions at the first indentation level (no
 % whitespace in front of the function declaration, so it leaves nested
 % functions intact.
@@ -31,12 +36,13 @@ function [ numFunc, funcs ] = extractFunctions( filename, varargin )
 %
 % Created by: Ian McInerney
 % Created on: February 20, 2018
-% Version: 1.1
-% Last Modified: February 21, 2018
+% Version: 1.2
+% Last Modified: February 17, 2019
 %
 % Revision History
 %   1.0 - Initial release
 %   1.1 - Added breakpoint extraction
+%   1.2 - Made read happen from a temp file to prevent file overwriting
 
 
 %% Parse the optional input
@@ -47,11 +53,15 @@ parse(p, varargin{:});
 eb = p.Results.ExtractBreakpoints;
 
 
+%% Copy the file
+copyfile(filename, 'tempFile.m', 'f');
+
+
 %% Open the file
-fr = fopen(filename);
+fr = fopen('tempFile.m');
 
 if (fr == -1)
-    error(['Unable to open file ' filename]);
+    error('Unable to open the file.');
 end
 
 
@@ -125,6 +135,10 @@ fclose(fr);
 if (fw ~= -1)
     fclose(fw);
 end
+
+
+%% Delete the temp file
+delete('tempFile.m');
 
 
 %% Force MATLAB to find the new functions
